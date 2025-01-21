@@ -1,0 +1,10 @@
+python-dotenv
+datasets
+google-cloud-aiplatform
+langchain-core
+langchain_community 
+langchain-google-vertexai 
+langchain_google_firestore
+langchain-google-community
+google-cloud-texttospeech
+flask
