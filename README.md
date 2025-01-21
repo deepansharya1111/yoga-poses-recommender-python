@@ -1,4 +1,4 @@
-# yoga-poses-recommender-python
+# Yoga pose recommender
 A Flask Web Application that demonstrates how to do Vector Search on a Yoga Poses database in Firestore. 
 
 The application is a step by step demonstration of the following:
