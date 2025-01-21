@@ -8,6 +8,8 @@ The application is a step by step demonstration of the following:
 4. Create a composite index in Firestore to allow for Vector search.
 5. Utilize the Vector Search in a Flask Application that brings everything together as shown below:
 
+<img title="a title" alt="Alt text" src="/images/screenshot.png">
+
 Technologies used:
 1. Python + Flask Framework
 2. Google Cloud : Firestore, Cloud Run, Gemini in Vertex AI
