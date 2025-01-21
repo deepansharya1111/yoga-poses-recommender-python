@@ -10,7 +10,7 @@ The application is a step by step demonstration of the following:
 
 <img title="a title" alt="Alt text" src="/images/screenshot.png">
 
-Technologies used:
+## Technologies used:
 1. Python + Flask Framework
 2. Google Cloud : Firestore, Cloud Run, Gemini in Vertex AI
 3. Langchain Python framework
