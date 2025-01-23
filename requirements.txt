@@ -8,3 +8,4 @@ langchain_google_firestore
 langchain-google-community
 google-cloud-texttospeech
 flask
+tenacity
