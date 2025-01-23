@@ -5,6 +5,7 @@ import logging
 from dotenv import load_dotenv
 import vertexai
 from langchain_google_vertexai import VertexAI
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 load_dotenv()
 logging.basicConfig(
@@ -14,6 +15,10 @@ logging.basicConfig(
 vertexai.init(project=os.getenv("PROJECT_ID"), location=os.getenv("LOCATION"))
 logging.info("Done Initializing Vertex AI SDK")
 
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 def generate_description(pose_name, sanskrit_name, expertise_level, pose_types):
     """Generates a description for a yoga pose using the Gemini API."""
 
