@@ -14,5 +14,3 @@ The application is a step by step demonstration of the following:
 1. Python + Flask Framework
 2. Google Cloud : Firestore, Cloud Run, Gemini in Vertex AI
 3. Langchain Python framework
-
-
