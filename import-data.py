@@ -67,11 +67,6 @@ def main():
     documents = create_langchain_documents(all_poses)
     logging.info(f"Successfully created langchain documents. Total documents: {len(documents)}")
 
-    #Lets check the first few of the documents
-    for doc in documents[:2]:
-        print("Page Content:", doc.page_content)
-        print("Metadata:", doc.metadata)
-
     embedding = VertexAIEmbeddings(
             model_name=os.getenv("EMBEDDING_MODEL_NAME"),
             project=os.getenv("PROJECT_ID"),
@@ -83,7 +78,7 @@ def main():
             database=os.getenv("DATABASE")
     )
 
-    vector_store = FirestoreVectorStore.from_documents(client=client,collection=os.getenv("COLLECTION"),documents=documents,embedding=embedding)
+    vector_store = FirestoreVectorStore.from_documents(client=client,collection=os.getenv("TEST_COLLECTION"),documents=documents,embedding=embedding)
     logging.info(f"Added documents to the vector store.")
 
 
