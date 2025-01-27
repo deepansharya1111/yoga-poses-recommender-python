@@ -64,6 +64,8 @@ def add_descriptions_to_json(input_file, output_file):
             pose["description"] = ""
             processed_count += 1
             logging.info(f"Processed: {processed_count}/{total_poses} - {pose['name']} ({time_taken:.2f} seconds)")
+        # Adding a delay to avoid rate limit
+        time.sleep(30)
 
 
     with open(output_file, 'w') as f:
