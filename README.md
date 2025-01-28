@@ -15,4 +15,7 @@ The application is a step by step demonstration of the following:
 2. Google Cloud : Firestore, Cloud Run, Gemini in Vertex AI
 3. Langchain Python framework
 
+## Codelab
+Step by Step instructions to understand and run/deploy this application is available in this [codelab](https://codelabs.developers.google.com/yoga-pose-firestore-vectorsearch-python?hl=en#0).
+
 
