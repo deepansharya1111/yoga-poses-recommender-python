@@ -5,4 +5,5 @@ EMBEDDING_MODEL_NAME=<GEMINI_EMBEDDING_MODEL_NAME> # Example -> text-embedding-0
 IMAGE_GENERATION_MODEL_NAME=<IMAGEN_MODEL_NAME> # Example -> imagen-3.0-fast-generate-001
 DATABASE=<FIRESTORE_DATABASE_NAME> # Example -> (default) or yoga-database
 COLLECTION=<FIRESTORE_COLLECTION_NAME> # Example -> poses
+TEST_COLLECTION=test-poses
 TOP_K=3
