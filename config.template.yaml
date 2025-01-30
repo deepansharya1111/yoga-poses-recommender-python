@@ -6,4 +6,4 @@ image_generation_model_name: imagen-3.0-fast-generate-002
 database: (default)
 collection: poses
 test_collection: test-poses
-top_k: 3
+top_k: "3"
