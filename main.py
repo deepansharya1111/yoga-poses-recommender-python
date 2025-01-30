@@ -1,6 +1,4 @@
-import os
 import logging
-from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template, make_response
 from google.cloud import firestore
 from langchain_core.documents import Document
@@ -8,8 +6,9 @@ from langchain_google_firestore import FirestoreVectorStore
 from langchain_google_vertexai import VertexAIEmbeddings
 import google.cloud.texttospeech as tts
 import urllib
+from settings import get_settings
 
-load_dotenv()
+settings = get_settings()
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -20,24 +19,24 @@ app = Flask(__name__)
 def search(query: str):
     """Executes Firestore Vector Similarity Search"""
     embedding = VertexAIEmbeddings(
-        model_name=os.getenv("EMBEDDING_MODEL_NAME"),
-        project=os.getenv("PROJECT_ID"),
-        location=os.getenv("LOCATION"),
+        model_name=settings.embedding_model_name,
+        project=settings.project_id,
+        location=settings.location,
     )
 
     client = firestore.Client(
-        project=os.getenv("PROJECT_ID"), database=os.getenv("DATABASE")
+        project=settings.project_id, database=settings.database
     )
 
     vector_store = FirestoreVectorStore(
         client=client,
-        collection=os.getenv("COLLECTION"),
+        collection=settings.collection,
         embedding_service=embedding,
     )
 
     logging.info(f"Now executing query: {query}")
     results: list[Document] = vector_store.similarity_search(
-        query=query, k=int(os.getenv("TOP_K")), include_metadata=False
+        query=query, k=int(settings.top_k), include_metadata=False
     )
     
     #Format the results for JSON output
@@ -106,4 +105,4 @@ def text_to_wav(voice_name: str, text: str):
     return response.audio_content
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    app.run(debug=True, host="0.0.0.0", port=int(settings.port))

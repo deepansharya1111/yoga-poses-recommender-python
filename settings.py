@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     collection: str
     test_collection: str
     top_k: int
+    port: int = 8080
 
     model_config = SettingsConfigDict(
         yaml_file="config.yaml", yaml_file_encoding="utf-8"
