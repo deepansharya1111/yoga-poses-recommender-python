@@ -26,7 +26,11 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
-        return (YamlConfigSettingsSource(settings_cls),)
+        return (
+            init_settings,  # First, try init_settings (from constructor)
+            YamlConfigSettingsSource(settings_cls),  # Then, try YAML
+            env_settings,  # Finally, try environment variables
+        )
     
 def get_settings() -> Settings:
     return Settings()
