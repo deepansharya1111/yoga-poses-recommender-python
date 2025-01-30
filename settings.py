@@ -5,6 +5,12 @@ class Settings(BaseSettings):
     project_id: str
     location: str
     gemini_model_name: str
+    embedding_model_name: str
+    image_generation_model_name: str
+    database: str
+    collection: str
+    test_collection: str
+    top_k: int
 
     model_config = SettingsConfigDict(
         yaml_file="config.yaml", yaml_file_encoding="utf-8"

@@ -1746,7 +1746,6 @@ dependencies = [
     { name = "langchain-google-firestore" },
     { name = "langchain-google-vertexai" },
     { name = "pydantic-settings" },
-    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "tenacity" },
 ]
@@ -1768,7 +1767,6 @@ requires-dist = [
     { name = "langchain-google-firestore", specifier = ">=0.5.0" },
     { name = "langchain-google-vertexai", specifier = ">=2.0.7" },
     { name = "pydantic-settings", specifier = ">=2.7.1" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "tenacity", specifier = ">=9.0.0" },
 ]
