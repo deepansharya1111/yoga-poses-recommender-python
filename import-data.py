@@ -1,25 +1,24 @@
-import os
 import logging
 import json
-from dotenv import load_dotenv
 from datasets import load_dataset
 from google.cloud import firestore
 from langchain_core.documents import Document
 from langchain_google_firestore import FirestoreVectorStore
 from langchain_google_vertexai import VertexAIEmbeddings
+from settings import get_settings
 
-load_dotenv()
+settings = get_settings()
 logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def load_yoga_poses_data_from_hugging_face():
     """
-    Loads the Yoga poses dataset. 
+    Loads the Yoga poses dataset.
     Hugging Face Dataset: https://huggingface.co/datasets/omergoshen/yoga_poses
     """
     try:
-
         # Load the yoga json array into memory from a file
         dataset = load_dataset("omergoshen/yoga_poses")
         poses = dataset["train"].to_list()
@@ -28,6 +27,7 @@ def load_yoga_poses_data_from_hugging_face():
     except Exception as e:
         logging.error(f"Error loading dataset: {e}")
         return None
+
 
 def load_yoga_poses_data_from_local_file(filename):
     """
@@ -41,6 +41,7 @@ def load_yoga_poses_data_from_local_file(filename):
     except Exception as e:
         logging.error(f"Error loading dataset: {e}")
         return None
+
 
 def create_langchain_documents(poses):
     """Creates a list of Langchain Documents from a list of poses."""
@@ -62,24 +63,31 @@ def create_langchain_documents(poses):
     logging.info(f"Created {len(documents)} Langchain documents.")
     return documents
 
-def main():
-    all_poses = load_yoga_poses_data_from_local_file("./data/yoga_poses_with_descriptions.json")
-    documents = create_langchain_documents(all_poses)
-    logging.info(f"Successfully created langchain documents. Total documents: {len(documents)}")
 
-    embedding = VertexAIEmbeddings(
-            model_name=os.getenv("EMBEDDING_MODEL_NAME"),
-            project=os.getenv("PROJECT_ID"),
-            location=os.getenv("LOCATION")
-        )
-        
-    client = firestore.Client(
-            project=os.getenv("PROJECT_ID"),
-            database=os.getenv("DATABASE")
+def main():
+    all_poses = load_yoga_poses_data_from_local_file(
+        "./data/yoga_poses_with_descriptions.json"
+    )
+    documents = create_langchain_documents(all_poses)
+    logging.info(
+        f"Successfully created langchain documents. Total documents: {len(documents)}"
     )
 
-    vector_store = FirestoreVectorStore.from_documents(client=client,collection=os.getenv("TEST_COLLECTION"),documents=documents,embedding=embedding)
-    logging.info(f"Added documents to the vector store.")
+    embedding = VertexAIEmbeddings(
+        model_name=settings.embedding_model_name,
+        project=settings.project_id,
+        location=settings.location,
+    )
+
+    client = firestore.Client(project=settings.project_id, database=settings.database)
+
+    vector_store = FirestoreVectorStore.from_documents(
+        client=client,
+        collection=settings.test_collection,
+        documents=documents,
+        embedding=embedding,
+    )
+    logging.info("Added documents to the vector store.")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 import google.cloud.texttospeech as tts
 from typing import Sequence
 
+
 def unique_languages_from_voices(voices: Sequence[tts.Voice]):
     language_set = set()
     for voice in voices:
@@ -18,6 +19,7 @@ def list_languages():
     for i, language in enumerate(sorted(languages)):
         print(f"{language:>10}", end="\n" if i % 5 == 4 else "")
 
+
 def list_voices(language_code=None):
     client = tts.TextToSpeechClient()
     response = client.list_voices(language_code=language_code)
@@ -30,6 +32,7 @@ def list_voices(language_code=None):
         gender = tts.SsmlVoiceGender(voice.ssml_gender).name
         rate = voice.natural_sample_rate_hertz
         print(f"{languages:<8} | {name:<24} | {gender:<8} | {rate:,} Hz")
+
 
 def text_to_wav(voice_name: str, text: str):
     language_code = "-".join(voice_name.split("-")[:2])
@@ -51,6 +54,10 @@ def text_to_wav(voice_name: str, text: str):
         out.write(response.audio_content)
         print(f'Generated speech saved to "{filename}"')
 
+
 if __name__ == "__main__":
     # list_voices("en-IN")
-    text_to_wav("en-IN-Wavenet-C","Padangusthasana (Big Toe Pose) is a beginner standing forward bend.  Grasp your big toe, lengthening your spine to gently stretch hamstrings and calves.  Keep knees slightly bent to avoid strain.  Focus on lengthening, not forcing the bend.")
+    text_to_wav(
+        "en-IN-Wavenet-C",
+        "Padangusthasana (Big Toe Pose) is a beginner standing forward bend.  Grasp your big toe, lengthening your spine to gently stretch hamstrings and calves.  Keep knees slightly bent to avoid strain.  Focus on lengthening, not forcing the bend.",
+    )
