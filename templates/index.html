@@ -27,7 +27,11 @@
          }
          @keyframes spin {
             0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
+             100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        /* Removed CSS Transitions for Clearing */
+         .hidden { 
+             display: none !important; 
         }
     </style>
 </head>
@@ -37,16 +41,67 @@
         <form id="searchForm" class="mb-4">
             <div class="mb-4">
                 <label for="prompt" class="block text-gray-700 text-sm font-bold mb-2">Enter your search prompt:</label>
-                <input type="text" id="prompt" name="prompt" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., exercises for back pain">
+                <div class="flex space-x-2">
+                    <input type="text" id="prompt" name="prompt" class="flex-grow shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., exercises for back pain">
+                    <div class="flex-shrink-0">
+                         <label for="expertiseFilter" class="block text-gray-700 text-sm font-bold mb-1">Expertise:</label>
+                         <select id="expertiseFilter" name="expertiseFilter" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                             <option value="Any" selected>Any</option>
+                             <option value="Beginner">Beginner</option>
+                             <option value="Intermediate">Intermediate</option>
+                             <option value="Advanced">Advanced</option>
+                         </select>
+                    </div>
+                     <div class="flex-shrink-0">
+                         <label for="numResults" class="block text-gray-700 text-sm font-bold mb-1">Results:</label>
+                         <select id="numResults" name="numResults" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                             <option value="3" selected>3</option>
+                             <option value="4">4</option>
+                             <option value="5">5</option>
+                             <option value="6">6</option>
+                             <option value="7">7</option>
+                             <option value="8">8</option>
+                             <option value="9">9</option>
+                             <option value="10">10</option>
+                         </select>
+                    </div>
+                </div>
                 <p id="promptError" class="text-red-500 text-xs italic hidden">Please enter a prompt.</p>
             </div>
-            <div class="text-center">
+            <div class="text-center mt-4"> <!-- Added margin top -->
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Search</button>
             </div>
         </form>
          <div id="resultsContainer" class="mt-4 flex flex-wrap justify-center relative">
             <!-- Results will be displayed here -->
         </div>
+
+        <!-- Web Search Section -->
+        <div class="mt-8 pt-4 border-t">
+             <h2 class="text-2xl font-bold mb-3 text-center">Explore More with Web Search</h2>
+             <div class="mb-4 max-w-lg mx-auto">
+                 <label for="webSearchPrompt" class="block text-gray-700 text-sm font-bold mb-2">Ask about other poses or yoga topics:</label>
+                 <div class="flex space-x-2">
+                     <input type="text" id="webSearchPrompt" name="webSearchPrompt" class="flex-grow shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., yoga poses for beginners, benefits of sun salutation">
+                     <button id="webSearchBtn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex-shrink-0">Search & Speak</button>
+                 </div>
+             </div>
+             <div id="webSearchResultsAudio" class="mt-4 max-w-lg mx-auto">
+                 <!-- Web search audio, transcript, and image will appear here -->
+                 <div class="audio-transcript-area mt-3 border-t pt-3"></div> 
+                 <!-- Hidden Follow-up Section -->
+                 <div class="follow-up-section mt-4 hidden" data-query=""> <!-- Store query here -->
+                     <textarea class="follow-up-input shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="2" placeholder="Ask a follow-up question..."></textarea>
+                     <div class="flex justify-end space-x-2 mt-2"> <!-- Container for buttons -->
+                         <button class="generate-image-btn bg-cyan-500 hover:bg-cyan-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline" onclick="generateWebSearchImage(this)">Generate Image</button>
+                         <button class="clear-history-btn bg-gray-400 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline" onclick="clearWebSearchHistory(this)">Clear</button>
+                         <button class="send-follow-up-btn bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline" onclick="sendWebSearchFollowUp(this)">Send Follow-up</button>
+                     </div>
+                 </div>
+             </div>
+        </div>
+        <!-- End Web Search Section -->
+
     </div>
 
     <script>
@@ -60,41 +115,47 @@
             event.preventDefault();
 
             const promptValue = promptInput.value.trim();
-            if (!promptValue) {
-              promptError.classList.remove("hidden");
-              return;
-            }
-             promptError.classList.add("hidden");
+            const numResultsValue = document.getElementById('numResults').value; 
+            const expertiseFilterValue = document.getElementById('expertiseFilter').value; // Get selected expertise
 
+            if (!promptValue) {
+                promptError.classList.remove("hidden");
+                return;
+            }
+            promptError.classList.add("hidden");
 
             body.classList.add('loading'); // Add loading class
-             resultsContainer.innerHTML = ''; // Clear previous results and show loading indicator
+            resultsContainer.innerHTML = ''; // Clear previous results and show loading indicator
 
-
+            // Send the search request to the server
             fetch('/search', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt: promptValue })
+                // Send prompt, num_results, and expertise_filter
+                body: JSON.stringify({ 
+                    prompt: promptValue, 
+                    num_results: parseInt(numResultsValue),
+                    expertise_filter: expertiseFilterValue 
+                }), 
             })
             .then(response => response.json())
             .then(data => {
-                body.classList.remove('loading'); // Remove loading class
                 if (data.error) {
                     console.error("Error from API:", data.error);
                     resultsContainer.innerHTML = `<p class="text-red-500">Error: ${data.error}</p>`;
-
                 } else if (data.results && data.results.length > 0) {
-                   displayResults(data.results)
+                    displayResults(data.results);
                 } else {
                     resultsContainer.innerHTML = `<p>No results found.</p>`;
                 }
+                body.classList.remove('loading'); // Remove loading class
             })
             .catch(error => {
+                console.error('Error:', error);
+                resultsContainer.innerHTML = `<p class="text-red-500">Error: ${error}</p>`;
                 body.classList.remove('loading'); // Remove loading class
-                console.error("Fetch error:", error);
-                resultsContainer.innerHTML = `<p class="text-red-500">An error occurred during the search.</p>`;
             });
         });
 
@@ -115,36 +176,672 @@
                              <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">Expertise: ${result.metadata.metadata.expertise_level || 'N/A'}</span>
                              ${result.metadata.metadata.pose_type ? result.metadata.metadata.pose_type.map(type => `<span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">${type}</span>`).join('') : '<span>N/A</span>'}
                          </div>
-                         <button class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="generateAndPlayAudio('${encodeURIComponent(result.metadata.metadata.description)}')">Play Audio</button>
+                         <!-- Container for Play button and Voice Selector -->
+                         <div class="flex items-center space-x-2 mt-4">
+                             <button 
+                                 class="play-audio-btn bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" 
+                                 data-pose-name="${result.metadata.metadata.name || 'Unknown Pose'}" 
+                                 onclick="generateAndPlayAudio(this)">Play Audio Instructions</button>
+                             <div class="flex-shrink-0">
+                                  <label for="voiceSelect-${result.metadata.metadata.name.replace(/\s+/g, '-')}" class="sr-only">Select Voice:</label> <!-- Screen reader label -->
+                                  <select id="voiceSelect-${result.metadata.metadata.name.replace(/\s+/g, '-')}" class="voice-select-dropdown shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
+                                      <option value="Aoede" selected>Aoede (F)</option>
+                                      <option value="Puck">Puck (M)</option>
+                                      <option value="Charon">Charon (M)</option>
+                                      <option value="Kore">Kore (F)</option>
+                                      <option value="Fenrir">Fenrir (M)</option>
+                                      <option value="Leda">Leda (F)</option>
+                                      <option value="Orus">Orus (M)</option>
+                                      <option value="Zephyr">Zephyr (F)</option>
+                                  </select>
+                             </div>
+                         </div>
+                         <!-- Placeholder for audio players and transcripts -->
+                         <div class="audio-transcript-area mt-3 border-t pt-3"></div> 
+                         <!-- Hidden Follow-up Section -->
+                         <div class="follow-up-section mt-4 hidden" data-pose-name="${result.metadata.metadata.name || 'Unknown Pose'}">
+                             <textarea class="follow-up-input shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="2" placeholder="Ask a follow-up question..."></textarea>
+                             <div class="flex justify-end space-x-2 mt-2"> <!-- Container for buttons -->
+                                 <button class="clear-history-btn bg-gray-400 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline" onclick="clearAudioHistory(this)">Clear</button>
+                                 <button class="send-follow-up-btn bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline" onclick="sendFollowUp(this)">Send Follow-up</button>
+                             </div>
+                         </div>
                     </div>
                 `;
                 resultsContainer.appendChild(card);
+
+                // Add event listener for Enter key on the textarea AFTER appending the card
+                const followUpInput = card.querySelector('.follow-up-input');
+                const sendButton = card.querySelector('.send-follow-up-btn');
+                if (followUpInput && sendButton) {
+                    followUpInput.addEventListener('keydown', function(event) {
+                        // Check if Enter key is pressed (without Shift key)
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault(); // Prevent newline
+                            sendButton.click(); // Trigger button click
+                        }
+                    });
+                }
             });
         }
 
-        async function generateAndPlayAudio(description) {
-            try {
-                const response = await fetch('/generate_audio', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ description })
-                });
+        // --- Audio Playback and Follow-up Logic (Shared by Pose and Web Search) ---
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+        let currentPlayingAudio = null; // Variable to track the active audio player
 
-                const audioBlob = await response.blob();
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                audio.play();
-            } catch (error) {
-                console.error('Error generating or playing audio:', error);
-                alert('Error generating audio. Please try again later.');
+        function addAudioPlayerAndTranscript(audioBase64, transcription, containerElement, isFollowUp = false) {
+            // Decode base64 audio
+            const audioBlob = base64ToBlob(audioBase64, 'audio/wav');
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            // Create audio player element
+            const audioPlayer = document.createElement('audio');
+            audioPlayer.controls = true;
+            audioPlayer.src = audioUrl;
+            audioPlayer.className = 'w-full mt-2'; // Add some styling
+
+            // Create transcript element with better formatting
+            const transcriptDiv = document.createElement('div');
+            transcriptDiv.className = 'mt-2 p-2 bg-gray-100 rounded text-sm prose prose-sm max-w-none'; 
+            
+            // Format transcript: Prioritize double newlines, then single newlines
+            let paragraphs = transcription.split('\n\n'); // Try splitting by double newline first
+            if (paragraphs.length <= 1) { 
+                // If no double newlines, split by single newline
+                paragraphs = transcription.split('\n');
             }
+            
+            // Filter out empty paragraphs and wrap remaining in <p> tags
+            transcriptDiv.innerHTML = paragraphs
+                .map(p => p.trim()) // Trim whitespace
+                .filter(p => p.length > 0) // Remove empty lines
+                .map(p => `<p class="mb-2">${p}</p>`) // Wrap in paragraph tags
+                .join(''); // Join back into HTML string
+
+            // Fallback if formatting somehow results in empty string
+            if (!transcriptDiv.innerHTML) {
+                 transcriptDiv.innerHTML = `<p>${transcription}</p>`;
+            }
+
+            // Create a container for the model's response (audio + transcript)
+            const turnContainer = document.createElement('div');
+            turnContainer.className = 'mb-3 border-b pb-3'; // Add spacing between turns
+            // No generic "Follow-up response:" label needed now
+            turnContainer.appendChild(audioPlayer);
+            turnContainer.appendChild(transcriptDiv);
+
+            // Append to the main audio/transcript area for this card
+            containerElement.appendChild(turnContainer);
+
+            // Add event listener to pause others when this one plays
+            audioPlayer.addEventListener('play', (event) => { // Added event arg
+                console.log(`Play event fired for:`, event.target); // Log which player fired
+                console.log(`CurrentPlayingAudio before check:`, currentPlayingAudio); // Log current tracked player
+                if (currentPlayingAudio && currentPlayingAudio !== audioPlayer) {
+                    console.log(`Pausing previous audio:`, currentPlayingAudio);
+                    currentPlayingAudio.pause();
+                }
+                console.log(`Setting currentPlayingAudio to:`, audioPlayer);
+                currentPlayingAudio = audioPlayer; // Track this as the currently playing one
+            });
+
+            // Pause previously playing audio (if any) before autoplaying the new one
+            if (currentPlayingAudio) {
+                 console.log("Pausing previous audio before autoplay");
+                currentPlayingAudio.pause();
+            }
+            
+            // Play the new audio automatically and track it
+            audioPlayer.play(); 
+            currentPlayingAudio = audioPlayer; // Explicitly set again after play() just in case
+
+            // Optional: Clear the reference when audio ends
+            audioPlayer.addEventListener('ended', () => {
+                if (currentPlayingAudio === audioPlayer) {
+                    currentPlayingAudio = null;
+                }
+            }); // Removed semicolon here
+            // Optional: Clear the reference if user pauses manually
+             audioPlayer.addEventListener('pause', () => {
+                 // Check if paused by user (not at the end) and if it's the one we are tracking
+                 if (currentPlayingAudio === audioPlayer && audioPlayer.paused && !audioPlayer.ended) { 
+                     console.log("Clearing currentPlayingAudio due to manual pause");
+                     currentPlayingAudio = null;
+                 }
+             });
         }
+
+        // --- Pose Instruction Specific Functions ---
+
+        function clearAudioHistory(buttonElement) {
+            // Target elements within the card
+            const cardElement = buttonElement.closest('.px-6.py-4');
+            const audioTranscriptArea = cardElement.querySelector('.audio-transcript-area');
+            const followUpContainer = cardElement.querySelector('.follow-up-section');
+            const playButton = cardElement.querySelector('.play-audio-btn');
+            const followUpInput = cardElement.querySelector('.follow-up-input');
+            const transitionDuration = 300; // Milliseconds, should match CSS transition duration
+
+            // Add 'clearing' class to start animation
+            if (audioTranscriptArea) {
+                 audioTranscriptArea.classList.add('clearing');
+            }
+            if (followUpContainer) {
+                 followUpContainer.classList.add('clearing');
+            }
+
+             // Wait for animation to finish before hiding/clearing completely
+             setTimeout(() => {
+                 // Clear audio/transcript area
+                 if (audioTranscriptArea) {
+                     audioTranscriptArea.innerHTML = '';
+                     audioTranscriptArea.classList.remove('clearing'); // Remove class after clearing
+                 }
+                 // Hide follow-up section
+                 if (followUpContainer) {
+                     followUpContainer.classList.add('hidden'); // Use hidden to ensure display:none
+                     followUpContainer.classList.remove('clearing'); // Remove class
+                 }
+                 // Show initial play button
+                 if (playButton) {
+                     playButton.classList.remove('hidden');
+                     playButton.disabled = false; // Ensure it's enabled
+                     playButton.textContent = 'Play Audio Instructions';
+                 }
+                 // Clear follow-up input just in case
+                 if (followUpInput) {
+                     followUpInput.value = '';
+                     followUpInput.disabled = false; // Ensure enabled
+                 }
+             }, transitionDuration);
+
+
+             // Show initial play button (Do this immediately, no need to wait for animation)
+            if (playButton) {
+                playButton.classList.remove('hidden');
+                playButton.disabled = false; // Ensure it's enabled
+                playButton.textContent = 'Play Audio Instructions';
+            }
+            // Clear follow-up input just in case
+            if (followUpInput) {
+                 followUpInput.value = '';
+                 followUpInput.disabled = false; // Ensure enabled
+            }
+
+            // Stop currently playing audio if it belongs to this card (optional but good)
+            // Note: This simple check might stop audio even if it's from another card if not careful
+            // A more robust way would involve associating audio players with cards.
+            if (currentPlayingAudio) {
+                 currentPlayingAudio.pause();
+                 currentPlayingAudio = null;
+            }
+             // We might also want to clear the server-side history here via another fetch call
+             // but for now, this just resets the UI.
+        }
+
+
+        // Helper function to convert base64 to Blob
+        function base64ToBlob(base64, contentType = '', sliceSize = 512) {
+            const byteCharacters = atob(base64);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                const slice = byteCharacters.slice(offset, offset + sliceSize);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            return new Blob(byteArrays, { type: contentType });
+        }
+
+
+        function generateAndPlayAudio(buttonElement) {
+            const cardElement = buttonElement.closest('.px-6.py-4'); // Keep this one
+            // const cardElement = buttonElement.closest('.px-6.py-4'); // Remove duplicate
+            const poseName = buttonElement.getAttribute('data-pose-name');
+            const followUpContainer = cardElement.querySelector('.follow-up-section');
+            const audioTranscriptArea = cardElement.querySelector('.audio-transcript-area');
+            const voiceSelect = cardElement.querySelector('.voice-select-dropdown'); // Find the dropdown in this card
+            const selectedVoice = voiceSelect ? voiceSelect.value : 'Aoede'; // Get selected voice, default to Aoede
+
+            if (!poseName || poseName === 'Unknown Pose') {
+                alert('Pose name not available for audio instructions.');
+                return;
+            }
+            buttonElement.textContent = 'Generating...';
+            buttonElement.disabled = true;
+            // Don't hide follow-up container here, just disable button
+
+            fetch('/generate_audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Send pose_name AND selected voice
+                body: JSON.stringify({ pose_name: poseName, voice_name: selectedVoice }), 
+            })
+            .then(response => {
+                buttonElement.textContent = 'Play Audio Instructions'; // Reset button text early
+                if (!response.ok) {
+                    buttonElement.disabled = false; // Re-enable on error
+                    return response.json().then(err => { throw new Error(err.error || 'Network response was not ok'); });
+                }
+                return response.json(); // Expect JSON now
+            })
+            .then(data => {
+                // Clear previous audio/transcripts for a new initial request
+                audioTranscriptArea.innerHTML = ''; 
+                addAudioPlayerAndTranscript(data.audio_base64, data.transcription, audioTranscriptArea);
+                buttonElement.classList.add('hidden'); // Hide initial button after success
+                if (followUpContainer) followUpContainer.classList.remove('hidden'); // Show follow-up section
+            })
+            .catch(error => {
+                buttonElement.disabled = false; // Re-enable on error
+                console.error('Error:', error);
+                alert('Error generating initial audio instructions: ' + error.message);
+            });
+        }
+
+        function sendFollowUp(buttonElement) {
+            const cardElement = buttonElement.closest('.px-6.py-4');
+            const followUpContainer = buttonElement.closest('.follow-up-section');
+            const poseName = followUpContainer.getAttribute('data-pose-name');
+            const followUpInput = followUpContainer.querySelector('.follow-up-input');
+            const audioTranscriptArea = cardElement.querySelector('.audio-transcript-area');
+            const voiceSelect = cardElement.querySelector('.voice-select-dropdown'); // Find dropdown again
+            const selectedVoice = voiceSelect ? voiceSelect.value : 'Aoede'; // Get selected voice
+            const followUpText = followUpInput.value.trim();
+
+            if (!followUpText) {
+                alert('Please enter a follow-up question.');
+                return;
+            }
+             if (!poseName || poseName === 'Unknown Pose') {
+                alert('Original pose name not found for follow-up.');
+                return;
+            }
+
+            // --- Display user's question immediately ---
+            const userQuestionDiv = document.createElement('div');
+            userQuestionDiv.className = 'mb-2 p-2 bg-blue-100 rounded text-sm text-right'; // Style user message
+            userQuestionDiv.textContent = `Your input: ${followUpText}`;
+            audioTranscriptArea.appendChild(userQuestionDiv);
+            // ---
+
+            // Disable input and button while generating
+            followUpInput.value = ''; // Clear input
+            followUpInput.disabled = true;
+            buttonElement.textContent = 'Generating...';
+            buttonElement.disabled = true;
+
+            fetch('/generate_audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                 // Send pose_name, follow_up_text AND selected voice
+                body: JSON.stringify({ pose_name: poseName, follow_up_text: followUpText, voice_name: selectedVoice }),
+            })
+            .then(response => {
+                buttonElement.textContent = 'Send Follow-up'; // Reset button text early
+                if (!response.ok) {
+                    buttonElement.disabled = false; // Re-enable on error
+                    return response.json().then(err => { throw new Error(err.error || 'Network response was not ok'); });
+                }
+                return response.json(); // Expect JSON
+            })
+            .then(data => {
+                addAudioPlayerAndTranscript(data.audio_base64, data.transcription, audioTranscriptArea); // Add model response
+                // Re-enable input/button AFTER response is added
+                followUpInput.disabled = false; 
+                buttonElement.disabled = false; 
+            })
+            .catch(error => {
+                // Re-enable input/button on error
+                followUpInput.disabled = false; 
+                buttonElement.disabled = false; 
+                // Maybe remove the user question display on error? Or add an error message?
+                // For now, just log and alert
+                console.error('Error:', error);
+                alert('Error generating follow-up audio: ' + error.message);
+                 // Remove the prematurely added user question if desired
+                 // if (userQuestionDiv.parentNode === audioTranscriptArea) {
+                 //    audioTranscriptArea.removeChild(userQuestionDiv);
+                 // }
+            });
+        }
+
+        // --- Web Search Specific Functions ---
+
+        const webSearchBtn = document.getElementById('webSearchBtn');
+        const webSearchPromptInput = document.getElementById('webSearchPrompt');
+        const webSearchContainer = document.getElementById('webSearchResultsAudio'); // Main container for this section
+        const webSearchAudioTranscriptArea = webSearchContainer.querySelector('.audio-transcript-area');
+        const webSearchFollowUpContainer = webSearchContainer.querySelector('.follow-up-section');
+        const webSearchFollowUpInput = webSearchContainer.querySelector('.follow-up-input');
+        const webSearchSendFollowUpBtn = webSearchContainer.querySelector('.send-follow-up-btn');
+
+
+        function clearWebSearchHistory(buttonElement) {
+             // No separate image container anymore, just clear the main area
+
+             const transitionDuration = 300; // Milliseconds, should match CSS
+
+             // Add 'clearing' class to start animation
+             if (webSearchAudioTranscriptArea) {
+                 webSearchAudioTranscriptArea.classList.add('clearing');
+             }
+             if (webSearchFollowUpContainer) {
+                 webSearchFollowUpContainer.classList.add('clearing');
+             }
+
+             // Wait for animation before clearing/hiding
+             setTimeout(() => {
+                 // Clear audio/transcript/image area
+                 if (webSearchAudioTranscriptArea) {
+                     webSearchAudioTranscriptArea.innerHTML = '';
+                     webSearchAudioTranscriptArea.classList.remove('clearing'); 
+                 }
+                 // Hide follow-up section
+                 if (webSearchFollowUpContainer) {
+                     webSearchFollowUpContainer.classList.add('hidden');
+                     webSearchFollowUpContainer.removeAttribute('data-query'); 
+                     webSearchFollowUpContainer.classList.remove('clearing'); 
+                 }
+                 // Reset follow-up input/button state (can be done after timeout)
+                 if (webSearchFollowUpInput) {
+                     webSearchFollowUpInput.value = '';
+                     webSearchFollowUpInput.disabled = false; 
+                 }
+                 if (webSearchSendFollowUpBtn) {
+                     webSearchSendFollowUpBtn.disabled = false;
+                 }
+             }, transitionDuration);
+
+             // Reset and show initial search button/input (do this immediately)
+            if (webSearchPromptInput) webSearchPromptInput.value = '';
+            if (webSearchBtn) {
+                 webSearchBtn.disabled = false;
+                 webSearchBtn.textContent = 'Search & Speak';
+            }
+             if (webSearchFollowUpInput) {
+                 webSearchFollowUpInput.value = '';
+                 webSearchFollowUpInput.disabled = false; 
+            }
+             if (webSearchSendFollowUpBtn) {
+                 webSearchSendFollowUpBtn.disabled = false;
+             }
+
+            // Stop currently playing audio 
+            if (currentPlayingAudio) {
+                 currentPlayingAudio.pause();
+                 currentPlayingAudio = null;
+            }
+             // TODO: Clear server-side history for 'web_search_user1' if needed
+        }
+
+
+        webSearchBtn.addEventListener('click', () => {
+            const query = webSearchPromptInput.value.trim();
+            if (!query) {
+                alert('Please enter a web search query.');
+                return;
+            }
+
+            webSearchBtn.textContent = 'Searching...';
+            webSearchBtn.disabled = true;
+            webSearchAudioTranscriptArea.innerHTML = '<p class="text-center text-gray-500">Generating audio response...</p>'; // Loading indicator
+            webSearchFollowUpContainer.classList.add('hidden'); // Hide follow-up during initial search
+
+            fetch('/web_search_audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query }), // Send initial query
+            })
+            .then(response => {
+                webSearchBtn.textContent = 'Search & Speak'; // Reset button early
+                if (!response.ok) {
+                    webSearchBtn.disabled = false; // Re-enable on error
+                    return response.json().then(err => { throw new Error(err.error || 'Network response was not ok'); });
+                }
+                return response.json(); // Expect JSON with audio and transcription
+            })
+            .then(data => {
+                 webSearchBtn.disabled = false; // Re-enable button
+                 webSearchAudioTranscriptArea.innerHTML = ''; // Clear loading indicator
+
+                 if (data.audio_base64) {
+                     addAudioPlayerAndTranscript(data.audio_base64, data.transcription || `Audio response for: "${query}"`, webSearchAudioTranscriptArea); 
+                     webSearchFollowUpContainer.setAttribute('data-query', query); // Store original query for context
+                     webSearchFollowUpContainer.classList.remove('hidden'); // Show follow-up
+                 } else {
+                      webSearchAudioTranscriptArea.innerHTML = '<p class="text-red-500">Error: No audio data received.</p>';
+                 }
+            })
+            .catch(error => {
+                webSearchBtn.disabled = false; // Re-enable on error
+                webSearchAudioTranscriptArea.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+                console.error('Error:', error);
+            });
+        });
+
+        function sendWebSearchFollowUp(buttonElement) {
+             const followUpText = webSearchFollowUpInput.value.trim();
+             const baseQuery = webSearchFollowUpContainer.getAttribute('data-query'); // Get base query
+
+             if (!followUpText) {
+                 alert('Please enter a follow-up question.');
+                 return;
+             }
+             
+             // --- Display user's question immediately ---
+             const userQuestionDiv = document.createElement('div');
+             userQuestionDiv.className = 'mb-2 p-2 bg-blue-100 rounded text-sm text-right'; 
+             userQuestionDiv.textContent = `Your input: ${followUpText}`;
+             webSearchAudioTranscriptArea.appendChild(userQuestionDiv);
+             // ---
+
+             // Disable input and button
+             webSearchFollowUpInput.value = ''; 
+             webSearchFollowUpInput.disabled = true;
+             buttonElement.textContent = 'Generating...';
+             buttonElement.disabled = true;
+
+             fetch('/web_search_audio', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 // Send follow_up_text and optionally the base_query for context
+                 body: JSON.stringify({ follow_up_text: followUpText, base_query: baseQuery }), 
+             })
+             .then(response => {
+                 buttonElement.textContent = 'Send Follow-up'; // Reset button early
+                 if (!response.ok) {
+                     buttonElement.disabled = false; 
+                     webSearchFollowUpInput.disabled = false;
+                     return response.json().then(err => { throw new Error(err.error || 'Network response was not ok'); });
+                 }
+                 return response.json(); 
+             })
+             .then(data => {
+                 addAudioPlayerAndTranscript(data.audio_base64, data.transcription || `Audio response to follow-up.`, webSearchAudioTranscriptArea); 
+                 webSearchFollowUpInput.disabled = false; 
+                 buttonElement.disabled = false; 
+             })
+             .catch(error => {
+                 webSearchFollowUpInput.disabled = false; 
+                 buttonElement.disabled = false; 
+                 console.error('Error:', error);
+                 alert('Error generating web search follow-up audio: ' + error.message);
+             });
+        }
+
+         // Add Enter key listener for web search input
+         webSearchPromptInput.addEventListener('keydown', function(event) {
+             if (event.key === 'Enter' && !event.shiftKey) {
+                 event.preventDefault(); 
+                 webSearchBtn.click(); 
+             }
+         });
+         // Add Enter key listener for web search follow-up input
+         webSearchFollowUpInput.addEventListener('keydown', function(event) {
+             if (event.key === 'Enter' && !event.shiftKey) {
+                 event.preventDefault(); 
+                 webSearchSendFollowUpBtn.click(); 
+             }
+         });
+         
+         function generateWebSearchImage(buttonElement) {
+             const followUpContainer = buttonElement.closest('.follow-up-section');
+             const baseQuery = followUpContainer.getAttribute('data-query'); // Get base query
+             // Target the main audio/transcript area now
+             const targetContainer = webSearchAudioTranscriptArea; 
+             const followUpInput = followUpContainer.querySelector('.follow-up-input'); 
+
+             if (!baseQuery && !followUpInput.value.trim()) { 
+                 alert('Original search query not found and no text entered for image generation.');
+                 return;
+             }
+
+             buttonElement.textContent = 'Generating...';
+             buttonElement.disabled = true;
+             // Add loading indicator to the target container temporarily
+             const loadingIndicator = document.createElement('p');
+             loadingIndicator.className = 'text-center text-gray-500 image-loading-indicator';
+             loadingIndicator.textContent = 'Generating image...';
+             targetContainer.appendChild(loadingIndicator);
+
+             // --- Determine Image Prompt ---
+             let promptSourceText = "";
+             const typedText = followUpInput.value.trim();
+
+             if (typedText) {
+                 // If user typed something in the box, use that directly
+                 promptSourceText = typedText;
+                 console.log("Using typed text for image prompt:", promptSourceText);
+                 // Maybe don't clear the input box in this case? Or clear it after generation? Let's clear after.
+                 // followUpInput.value = ''; // Clear later
+             } else {
+                 // If box is empty, try to find the last user input bubble
+                 const userInputs = webSearchAudioTranscriptArea.querySelectorAll('.bg-blue-100'); 
+                 if (userInputs.length > 0) {
+                     const lastUserInputElement = userInputs[userInputs.length - 1];
+                     promptSourceText = lastUserInputElement.textContent.replace('Your input: ', '').trim(); 
+                     console.log("Using last follow-up bubble for image prompt:", promptSourceText);
+                 } else {
+                     // Fallback to base query if no user bubbles found either
+                     promptSourceText = baseQuery;
+                     console.log("Using base query for image prompt (fallback):", baseQuery);
+                 }
+             }
+             
+             if (!promptSourceText) {
+                  alert('Could not determine a prompt for image generation.');
+                  buttonElement.disabled = false; // Re-enable button
+                  buttonElement.textContent = 'Generate Image';
+                  imageContainer.innerHTML = ''; // Clear loading indicator
+                  return;
+             }
+
+             const imagePrompt = `Generate an image illustrating or related to: ${promptSourceText}`; 
+             console.log("Final Image generation prompt:", imagePrompt); 
+             // --- End Determine Image Prompt ---
+
+             // --- Display image prompt ---
+             const imagePromptDiv = document.createElement('div');
+             imagePromptDiv.className = 'mb-2 p-2 bg-cyan-100 rounded text-sm text-right'; // Different color for image prompt
+             imagePromptDiv.textContent = `Image for: ${promptSourceText}`; // Show the source text used
+             targetContainer.appendChild(imagePromptDiv);
+             // ---
+             
+             // Clear input AFTER getting value if text was typed
+             if (typedText) {
+                 followUpInput.value = ''; 
+             }
+
+
+             fetch('/generate_image', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ prompt: imagePrompt }),
+             })
+             .then(response => {
+                 buttonElement.textContent = 'Generate Image'; // Reset button early
+                 if (!response.ok) {
+                     buttonElement.disabled = false; // Re-enable on error
+                     return response.json().then(err => { throw new Error(err.error || 'Network response was not ok'); });
+                 }
+                 return response.json(); 
+             })
+             .then(data => {
+                 buttonElement.disabled = false; // Re-enable button
+                 // Remove loading indicator before adding result
+                 const existingLoading = targetContainer.querySelector('.image-loading-indicator');
+                 if (existingLoading) targetContainer.removeChild(existingLoading);
+
+                 if (data.image_base64) {
+                     // Create a container for the image turn with relative positioning
+                     const imageTurnContainer = document.createElement('div');
+                     imageTurnContainer.className = 'relative mb-3 border-b pb-3 text-center'; // Added relative
+
+                     // Create container for buttons (top-right)
+                     const buttonContainer = document.createElement('div');
+                     buttonContainer.className = 'absolute top-1 right-1 flex space-x-1';
+
+                     // Create Download button (as a link)
+                     const downloadLink = document.createElement('a');
+                     downloadLink.href = `data:${data.mime_type};base64,${data.image_base64}`;
+                     downloadLink.download = `generated_image_${Date.now()}.png`; // Suggest filename
+                     downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>`; // Download icon
+                     downloadLink.className = 'p-1 bg-gray-600 text-white rounded opacity-75 hover:opacity-100 text-xs';
+                     downloadLink.title = 'Download Image';
+                     buttonContainer.appendChild(downloadLink);
+
+                     // Create Close button
+                     const closeButton = document.createElement('button');
+                     closeButton.innerHTML = '&times;'; // 'X' symbol
+                     closeButton.className = 'p-1 leading-none bg-red-500 text-white rounded opacity-75 hover:opacity-100 text-xs font-bold';
+                     closeButton.title = 'Close Image';
+                     closeButton.onclick = function() { 
+                         imageTurnContainer.remove(); // Remove the image container on click
+                     };
+                     buttonContainer.appendChild(closeButton);
+                     
+                     imageTurnContainer.appendChild(buttonContainer); // Add buttons to image container
+
+                     const img = document.createElement('img');
+                     img.src = `data:${data.mime_type};base64,${data.image_base64}`;
+                     img.alt = data.text || `Generated image for "${imagePrompt}"`;
+                     img.className = 'max-w-xs h-auto mx-auto rounded shadow'; // Adjusted max-width
+                     imageTurnContainer.appendChild(img); // Add image to turn container
+                     
+                     // Optionally display the text response too
+                     if (data.text) {
+                         const textDiv = document.createElement('p');
+                         textDiv.className = 'text-center text-xs text-gray-600 mt-1 italic';
+                         textDiv.textContent = data.text;
+                         imageTurnContainer.appendChild(textDiv); // Add text to turn container
+                     }
+                     targetContainer.appendChild(imageTurnContainer); // Append the whole turn
+                 } else {
+                      // Add error message to the target container
+                      const errorDiv = document.createElement('p');
+                      errorDiv.className = 'text-red-500 text-center';
+                      errorDiv.textContent = `Error: ${data.error || 'No image data received.'}`;
+                      targetContainer.appendChild(errorDiv);
+                 }
+             })
+             .catch(error => {
+                 buttonElement.disabled = false; // Re-enable on error
+                 // Remove loading indicator on error
+                 const existingLoading = targetContainer.querySelector('.image-loading-indicator');
+                 if (existingLoading) targetContainer.removeChild(existingLoading);
+                 // Add error message
+                 const errorDiv = document.createElement('p');
+                 errorDiv.className = 'text-red-500 text-center';
+                 errorDiv.textContent = `Error: ${error.message}`;
+                 targetContainer.appendChild(errorDiv);
+                 console.error('Error:', error);
+             });
+         }
+
     </script>
 </body>
 </html>

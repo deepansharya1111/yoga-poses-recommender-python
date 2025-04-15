@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     gemini_model_name: str
     embedding_model_name: str
     image_generation_model_name: str
+    gemini_live_model: str # Added field for the live model name
     database: str
     collection: str
     test_collection: str
