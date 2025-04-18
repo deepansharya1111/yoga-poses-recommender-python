@@ -144,6 +144,20 @@
     </div>
 
     <script>
+    // Example search queries
+    const exampleQueries = [
+        "Best Back exercises for people working in Sitting jobs",
+        "Yoga poses for stress relief and relaxation",
+        "Morning yoga routine for beginners",
+        "Yoga poses to improve flexibility",
+        "Yoga for better posture and core strength",
+        "Gentle yoga poses for seniors",
+        "Yoga poses for neck and shoulder pain",
+        "Energizing yoga poses for morning",
+        "Yoga poses for better sleep",
+        "Yoga for weight loss and toning"
+    ];
+
     // Global elements
     const searchForm = document.getElementById('searchForm');
     const promptInput = document.getElementById('prompt');
@@ -188,15 +202,22 @@
         searchForm.addEventListener('submit', function(event) {
             event.preventDefault();
 
-            const promptValue = promptInput.value.trim();
+            let promptValue = promptInput.value.trim();
             const numResultsValue = document.getElementById('numResults').value; 
             const expertiseFilterValue = document.getElementById('expertiseFilter').value; // Get selected expertise
 
+            // Set random example prompt if empty
             if (!promptValue) {
-                promptError.classList.remove("hidden");
-                return;
+                const randomIndex = Math.floor(Math.random() * exampleQueries.length);
+                promptValue = exampleQueries[randomIndex];
+                promptInput.value = promptValue; // Update input field with random example
+                promptError.classList.add("hidden"); // Hide error message
+                
+                // Enable clear button since we now have text
+                clearSearchBtn.disabled = false;
+                clearSearchBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                clearSearchBtn.classList.add('bg-gray-500', 'hover:bg-gray-700');
             }
-            promptError.classList.add("hidden");
 
             body.classList.add('loading'); // Add loading class
             resultsContainer.innerHTML = ''; // Clear previous results and show loading indicator
