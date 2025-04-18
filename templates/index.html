@@ -41,20 +41,20 @@
         <form id="searchForm" class="mb-4">
             <div class="mb-4">
                 <label for="prompt" class="block text-gray-700 text-sm font-bold mb-2">Enter your search prompt:</label>
-                <div class="flex space-x-2">
-                    <input type="text" id="prompt" name="prompt" class="flex-grow shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., exercises for back pain">
-                    <div class="flex-shrink-0">
+                <div class="flex flex-wrap gap-2">
+                    <input type="text" id="prompt" name="prompt" class="w-full md:w-auto md:flex-1 shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., exercises for back pain">
+                    <div class="w-full sm:w-auto">
                          <label for="expertiseFilter" class="block text-gray-700 text-sm font-bold mb-1">Expertise:</label>
-                         <select id="expertiseFilter" name="expertiseFilter" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                         <select id="expertiseFilter" name="expertiseFilter" class="w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline min-w-[150px]">
                              <option value="Any" selected>Any</option>
                              <option value="Beginner">Beginner</option>
                              <option value="Intermediate">Intermediate</option>
                              <option value="Advanced">Advanced</option>
                          </select>
                     </div>
-                    <div class="flex-shrink-0">
+                    <div class="w-full sm:w-auto">
                         <label for="languageSelect" class="block text-gray-700 text-sm font-bold mb-1">Audio Language:</label> <!-- Changed Label -->
-                        <select id="languageSelect" name="languageSelect" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <select id="languageSelect" name="languageSelect" class="w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline min-w-[150px]">
                             <option value="en-US" selected>English (US)</option>
                             <option value="de-DE">German (Germany)</option>
                             <option value="en-AU">English (Australia)</option>
@@ -87,9 +87,9 @@
                             <option value="te-IN">Telugu (India)</option>
                         </select>
                    </div>
-                     <div class="flex-shrink-0">
+                     <div class="w-full sm:w-auto">
                          <label for="numResults" class="block text-gray-700 text-sm font-bold mb-1">Results:</label>
-                         <select id="numResults" name="numResults" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                         <select id="numResults" name="numResults" class="w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline min-w-[100px]">
                              <option value="3" selected>3</option>
                              <option value="4">4</option>
                              <option value="5">5</option>
