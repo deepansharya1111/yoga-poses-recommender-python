@@ -3,7 +3,10 @@ langchain-core
 langchain-google-firestore
 langchain-google-vertexai
 google-cloud-firestore
+google-cloud-aiplatform # For Vertex AI backend support
 google-genai # Newer, unified SDK for Gemini
-numpy # For audio data handling (as per notebook)
+numpy==2.2.2 # For audio data handling (as per notebook)
 hypercorn # ASGI server to run async Flask
 Pillow # For image processing
+tenacity==9.0.0 \  # Needed for generate-descriptions.py script
+datasets==3.2.0 \  # Needed for import-data.py script (Hugging Face datasets)

@@ -7,5 +7,5 @@ gemini_live_model: gemini-2.0-flash-live-preview-04-09 # Model for Live API, Or 
 database: (default)
 collection: poses
 test_collection: test-poses
-top_k: 3
-port: 8080
+top_k: "3" # Value must be a string for Cloud Run deployment
+port: "8080" # Value must be a string for Cloud Run deployment
