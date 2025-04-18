@@ -52,6 +52,41 @@
                              <option value="Advanced">Advanced</option>
                          </select>
                     </div>
+                    <div class="flex-shrink-0">
+                        <label for="languageSelect" class="block text-gray-700 text-sm font-bold mb-1">Audio Language:</label> <!-- Changed Label -->
+                        <select id="languageSelect" name="languageSelect" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="en-US" selected>English (US)</option>
+                            <option value="de-DE">German (Germany)</option>
+                            <option value="en-AU">English (Australia)</option>
+                            <option value="en-GB">English (United Kingdom)</option>
+                            <option value="en-IN">English (India)</option>
+                            <option value="es-US">Spanish (United States)</option>
+                            <option value="es-ES">Spanish (Spain)</option>
+                            <option value="fr-FR">French (France)</option>
+                            <option value="fr-CA">French (Canada)</option>
+                            <option value="hi-IN">Hindi (India)</option>
+                            <option value="id-ID">Indonesian (Indonesia)</option>
+                            <option value="it-IT">Italian (Italy)</option>
+                            <option value="ja-JP">Japanese (Japan)</option>
+                            <option value="ko-KR">Korean (South Korea)</option>
+                            <option value="nl-NL">Dutch (Netherlands)</option>
+                            <option value="pl-PL">Polish (Poland)</option>
+                            <option value="pt-BR">Portuguese (Brazil)</option>
+                            <option value="ru-RU">Russian (Russia)</option>
+                            <option value="th-TH">Thai (Thailand)</option>
+                            <option value="tr-TR">Turkish (Turkey)</option>
+                            <option value="vi-VN">Vietnamese (Vietnam)</option>
+                            <option value="cmn-CN">Mandarin Chinese (China)</option>
+                            <option value="ar-XA">Arabic (Generic)</option>
+                            <option value="bn-IN">Bengali (India)</option>
+                            <option value="gu-IN">Gujarati (India)</option>
+                            <option value="kn-IN">Kannada (India)</option>
+                            <option value="ml-IN">Malayalam (India)</option>
+                            <option value="mr-IN">Marathi (India)</option>
+                            <option value="ta-IN">Tamil (India)</option>
+                            <option value="te-IN">Telugu (India)</option>
+                        </select>
+                   </div>
                      <div class="flex-shrink-0">
                          <label for="numResults" class="block text-gray-700 text-sm font-bold mb-1">Results:</label>
                          <select id="numResults" name="numResults" class="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
@@ -68,8 +103,9 @@
                 </div>
                 <p id="promptError" class="text-red-500 text-xs italic hidden">Please enter a prompt.</p>
             </div>
-            <div class="text-center mt-4"> <!-- Added margin top -->
+            <div class="text-center mt-4 flex justify-center space-x-2"> <!-- Use flex for button layout -->
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Search</button>
+                <button type="button" id="clearSearchBtn" onclick="clearSearch()" class="bg-gray-400 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline cursor-not-allowed" disabled>Clear</button>
             </div>
         </form>
          <div id="resultsContainer" class="mt-4 flex flex-wrap justify-center relative">
@@ -78,7 +114,7 @@
 
         <!-- Web Search Section -->
         <div class="mt-8 pt-4 border-t">
-             <h2 class="text-2xl font-bold mb-3 text-center">Explore More with Web Search</h2>
+             <h2 class="text-2xl font-bold mb-3 text-center">Explore More with Web Search & Imagen 3</h2>
              <div class="mb-4 max-w-lg mx-auto">
                  <label for="webSearchPrompt" class="block text-gray-700 text-sm font-bold mb-2">Ask about other poses or yoga topics:</label>
                  <div class="flex space-x-2">
@@ -110,6 +146,31 @@
         const promptError = document.getElementById('promptError');
         const resultsContainer = document.getElementById('resultsContainer');
         const body = document.body;
+        const clearSearchBtn = document.getElementById('clearSearchBtn'); // Get clear button
+
+        // Function to clear the main search prompt and results
+        function clearSearch() {
+            promptInput.value = ''; // Clear prompt input
+            resultsContainer.innerHTML = ''; // Clear results area
+            promptError.classList.add("hidden"); // Hide any error message
+            body.classList.remove('loading'); // Ensure loading state is removed
+            clearSearchBtn.disabled = true; // Disable button after clearing
+            clearSearchBtn.classList.add('bg-gray-400', 'cursor-not-allowed'); // Add disabled styles
+            clearSearchBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700'); // Remove enabled styles
+        }
+
+        // Add event listener to enable/disable clear button based on input
+        promptInput.addEventListener('input', function() {
+            const hasText = promptInput.value.trim() !== '';
+            clearSearchBtn.disabled = !hasText;
+            if (hasText) {
+                clearSearchBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                clearSearchBtn.classList.add('bg-gray-500', 'hover:bg-gray-700');
+            } else {
+                clearSearchBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                clearSearchBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700');
+            }
+        });
 
         searchForm.addEventListener('submit', function(event) {
             event.preventDefault();
@@ -403,8 +464,10 @@
             const poseName = buttonElement.getAttribute('data-pose-name');
             const followUpContainer = cardElement.querySelector('.follow-up-section');
             const audioTranscriptArea = cardElement.querySelector('.audio-transcript-area');
-            const voiceSelect = cardElement.querySelector('.voice-select-dropdown'); // Find the dropdown in this card
-            const selectedVoice = voiceSelect ? voiceSelect.value : 'Aoede'; // Get selected voice, default to Aoede
+            const voiceSelect = cardElement.querySelector('.voice-select-dropdown'); // Find the voice dropdown in this card
+            const selectedVoice = voiceSelect ? voiceSelect.value : 'Aoede'; // Get selected voice
+            const languageSelect = document.getElementById('languageSelect'); // Get the main language dropdown
+            const selectedLanguage = languageSelect ? languageSelect.value : 'en-US'; // Get selected language
 
             if (!poseName || poseName === 'Unknown Pose') {
                 alert('Pose name not available for audio instructions.');
@@ -417,8 +480,12 @@
             fetch('/generate_audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Send pose_name AND selected voice
-                body: JSON.stringify({ pose_name: poseName, voice_name: selectedVoice }), 
+                // Send pose_name, selected voice, AND selected language
+                body: JSON.stringify({ 
+                    pose_name: poseName, 
+                    voice_name: selectedVoice,
+                    language_code: selectedLanguage // Add language code
+                }), 
             })
             .then(response => {
                 buttonElement.textContent = 'Play Audio Instructions'; // Reset button text early
@@ -448,8 +515,10 @@
             const poseName = followUpContainer.getAttribute('data-pose-name');
             const followUpInput = followUpContainer.querySelector('.follow-up-input');
             const audioTranscriptArea = cardElement.querySelector('.audio-transcript-area');
-            const voiceSelect = cardElement.querySelector('.voice-select-dropdown'); // Find dropdown again
+            const voiceSelect = cardElement.querySelector('.voice-select-dropdown'); // Find voice dropdown again
             const selectedVoice = voiceSelect ? voiceSelect.value : 'Aoede'; // Get selected voice
+            const languageSelect = document.getElementById('languageSelect'); // Get the main language dropdown
+            const selectedLanguage = languageSelect ? languageSelect.value : 'en-US'; // Get selected language
             const followUpText = followUpInput.value.trim();
 
             if (!followUpText) {
@@ -477,8 +546,13 @@
             fetch('/generate_audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                 // Send pose_name, follow_up_text AND selected voice
-                body: JSON.stringify({ pose_name: poseName, follow_up_text: followUpText, voice_name: selectedVoice }),
+                 // Send pose_name, follow_up_text, selected voice, AND selected language
+                body: JSON.stringify({ 
+                    pose_name: poseName, 
+                    follow_up_text: followUpText, 
+                    voice_name: selectedVoice,
+                    language_code: selectedLanguage // Add language code
+                }),
             })
             .then(response => {
                 buttonElement.textContent = 'Send Follow-up'; // Reset button text early
@@ -581,6 +655,9 @@
 
         webSearchBtn.addEventListener('click', () => {
             const query = webSearchPromptInput.value.trim();
+            const languageSelect = document.getElementById('languageSelect'); // Get the main language dropdown
+            const selectedLanguage = languageSelect ? languageSelect.value : 'en-US'; // Get selected language
+
             if (!query) {
                 alert('Please enter a web search query.');
                 return;
@@ -594,7 +671,11 @@
             fetch('/web_search_audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query }), // Send initial query
+                // Send initial query AND language code
+                body: JSON.stringify({ 
+                    query: query,
+                    language_code: selectedLanguage // Add language code
+                }), 
             })
             .then(response => {
                 webSearchBtn.textContent = 'Search & Speak'; // Reset button early
@@ -626,6 +707,8 @@
         function sendWebSearchFollowUp(buttonElement) {
              const followUpText = webSearchFollowUpInput.value.trim();
              const baseQuery = webSearchFollowUpContainer.getAttribute('data-query'); // Get base query
+             const languageSelect = document.getElementById('languageSelect'); // Get the main language dropdown
+             const selectedLanguage = languageSelect ? languageSelect.value : 'en-US'; // Get selected language
 
              if (!followUpText) {
                  alert('Please enter a follow-up question.');
@@ -648,11 +731,15 @@
              fetch('/web_search_audio', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
-                 // Send follow_up_text and optionally the base_query for context
-                 body: JSON.stringify({ follow_up_text: followUpText, base_query: baseQuery }), 
+                 // Send follow_up_text, base_query, AND language code
+                 body: JSON.stringify({ 
+                     follow_up_text: followUpText, 
+                     base_query: baseQuery,
+                     language_code: selectedLanguage // Add language code
+                 }), 
              })
              .then(response => {
-                 buttonElement.textContent = 'Send Follow-up'; // Reset button early
+                 buttonElement.textContent = 'Send Follow-up'; // Reset button text early
                  if (!response.ok) {
                      buttonElement.disabled = false; 
                      webSearchFollowUpInput.disabled = false;

@@ -151,10 +151,11 @@ def search_api():
 @app.route('/generate_audio', methods=['POST'])
 async def generate_audio(): # Make the route async
     data = request.get_json()
-    # Get pose_name, optional follow_up_text, and optional voice_name
+    # Get pose_name, optional follow_up_text, optional voice_name, and optional language_code
     pose_name = data.get('pose_name')
     follow_up_text = data.get('follow_up_text') 
     voice_name = data.get('voice_name', 'Aoede') # Default to Aoede if not provided
+    language_code = data.get('language_code', 'en-US') # Default to en-US if not provided
 
     if not pose_name:
         return jsonify({'error': 'Missing pose_name'}), 400
@@ -168,34 +169,47 @@ async def generate_audio(): # Make the route async
         client = genai.Client(vertexai=True, project=settings.project_id, location=settings.location)
 
         # Configure the Live API connection for audio output AND text transcription
-        logging.info(f"Using voice: {voice_name}")
+        logging.info(f"Using voice: {voice_name}, language: {language_code}")
         config = LiveConnectConfig(
             response_modalities=["AUDIO"], 
             speech_config=SpeechConfig(
                 voice_config=VoiceConfig(
                     prebuilt_voice_config=PrebuiltVoiceConfig(voice_name=voice_name)
-                )
+                ),
+                language_code=language_code # Add language code here
             ),
             # Request transcription of the model's audio output
             output_audio_transcription=AudioTranscriptionConfig(), 
         )
 
-        # --- Manage Conversation History ---
+        # --- Manage Conversation History & Prompt ---
         session_id = 'user1' # Use a fixed ID for now; replace with real session ID
-        
+        history = conversation_histories.get(session_id, []) # Get history first
+
+        # Define base prompt text based on follow-up status
         if follow_up_text:
-            # This is a follow-up, retrieve existing history
-            history = conversation_histories.get(session_id, [])
-            current_user_text = f"Regarding the {pose_name} yoga pose, the user asked for clarification: '{follow_up_text}'. Please provide further audio instructions addressing this question. Format the instructions clearly in the transcription, ideally with a double newline between distinct steps or points."
-            logging.info(f"Processing follow-up text (requesting text format): {current_user_text}")
+            base_user_text = f"Regarding the {pose_name} yoga pose, the user asked for clarification: '{follow_up_text}'. Please provide further audio instructions addressing this question. Format the instructions clearly in the transcription, ideally with a double newline between distinct steps or points."
+            logging.info(f"Processing follow-up text (requesting text format, lang={language_code})")
         else:
-            # This is an initial request, start with empty history
-            history = [] 
-            current_user_text = f"Generate clear, step-by-step audio instructions for performing the {pose_name} yoga pose. Format the instructions clearly in the transcription, take pauses while narrating like humans (but do not write pause in the transcript, it is for your understanding), ideally using numbered steps with a double newline \n\n separator between each step(not to be spoken in audio). At the end, ask if the user needs clarification on any steps."
-            logging.info(f"Processing initial prompt text (requesting text format): {current_user_text}")
+            history = [] # Start with empty history for initial request
+            base_user_text = f"Generate clear, step-by-step audio instructions for performing the {pose_name} yoga pose. Format the instructions clearly in the transcription, take pauses while narrating like humans (but do not write pause in the transcript, it is for your understanding), ideally using numbered steps with a double newline \n\n separator between each step(not to be spoken in audio). At the end, ask if the user needs clarification on any steps."
+            logging.info(f"Processing initial prompt text (requesting text format, lang={language_code})")
             # Clear any old history for this session on a new initial request
             if session_id in conversation_histories:
-                 del conversation_histories[session_id] 
+                del conversation_histories[session_id]
+
+        # Add system instruction if language is not English
+        system_instruction = ""
+        if language_code != 'en-US': # Assuming en-US is the default/English
+            language_name = language_code.split('-')[0].upper() # Basic attempt
+            lang_map = {"DE": "GERMAN", "ES": "SPANISH", "FR": "FRENCH", "HI": "HINDI", "ID": "INDONESIAN", "IT": "ITALIAN", "JA": "JAPANESE", "KO": "KOREAN", "NL": "DUTCH", "PL": "POLISH", "PT": "PORTUGUESE", "RU": "RUSSIAN", "TH": "THAI", "TR": "TURKISH", "VI": "VIETNAMESE", "CMN": "MANDARIN CHINESE", "AR": "ARABIC", "BN": "BENGALI", "GU": "GUJARATI", "KN": "KANNADA", "ML": "MALAYALAM", "MR": "MARATHI", "TA": "TAMIL", "TE": "TELUGU"}
+            language_name = lang_map.get(language_name, language_name) # Use mapped name if available
+            system_instruction = f"RESPOND IN {language_name}. YOU MUST RESPOND UNMISTAKABLY IN {language_name}.\n\n"
+            logging.info(f"Adding system instruction for language: {language_name}")
+        
+        # Combine system instruction and base text
+        current_user_text = f"{system_instruction}{base_user_text}" # Now current_user_text is guaranteed to be assigned
+        logging.debug(f"Final user text being sent: {current_user_text}")
 
         # Prepare the full turn history to send to the model
         current_turn = Content(role="user", parts=[Part(text=current_user_text)])
@@ -292,6 +306,7 @@ async def web_search_audio():
     data = request.get_json()
     query = data.get('query') # Initial query or follow-up
     follow_up_text = data.get('follow_up_text') # Optional follow-up
+    language_code = data.get('language_code', 'en-US') # Default to en-US if not provided
 
     if not query and not follow_up_text: # Need at least one
         return jsonify({'error': 'Missing query or follow_up_text'}), 400
@@ -305,13 +320,15 @@ async def web_search_audio():
         client = genai.Client(vertexai=True, project=settings.project_id, location=settings.location)
 
         # Configure Live API for audio output + Google Search tool
-        voice_name = "Aoede" #["Aoede", "Puck", "Charon", "Kore", "Fenrir", "Leda", "Orus", "Zephyr"]
+        voice_name = "Aoede" # Keep a default voice for web search for now, or make it selectable too
+        logging.info(f"Using voice: {voice_name}, language: {language_code} for web search")
         config = LiveConnectConfig(
             response_modalities=["AUDIO"], 
             speech_config=SpeechConfig(
                 voice_config=VoiceConfig(
                     prebuilt_voice_config=PrebuiltVoiceConfig(voice_name=voice_name)
-                )
+                ),
+                language_code=language_code # Add language code here
             ),
             tools=[Tool(google_search=GoogleSearch())], # Add Google Search tool
             output_audio_transcription=AudioTranscriptionConfig(), # Request transcription
@@ -321,13 +338,22 @@ async def web_search_audio():
         # Use a different key for web search history
         session_id = 'web_search_user1' 
         history = conversation_histories.get(session_id, [])
+
+        # Add system instruction if language is not English
+        system_instruction = ""
+        if language_code != 'en-US':
+            language_name = language_code.split('-')[0].upper()
+            lang_map = {"DE": "GERMAN", "ES": "SPANISH", "FR": "FRENCH", "HI": "HINDI", "ID": "INDONESIAN", "IT": "ITALIAN", "JA": "JAPANESE", "KO": "KOREAN", "NL": "DUTCH", "PL": "POLISH", "PT": "PORTUGUESE", "RU": "RUSSIAN", "TH": "THAI", "TR": "TURKISH", "VI": "VIETNAMESE", "CMN": "MANDARIN CHINESE", "AR": "ARABIC", "BN": "BENGALI", "GU": "GUJARATI", "KN": "KANNADA", "ML": "MALAYALAM", "MR": "MARATHI", "TA": "TAMIL", "TE": "TELUGU"}
+            language_name = lang_map.get(language_name, language_name)
+            system_instruction = f"RESPOND IN {language_name}. YOU MUST RESPOND UNMISTAKABLY IN {language_name}.\n\n"
+            logging.info(f"Adding system instruction for language: {language_name}")
         
         if follow_up_text:
-            current_user_text = follow_up_text
-            logging.info(f"Processing web search follow-up text: {current_user_text}")
+            current_user_text = f"{system_instruction}{follow_up_text}"
+            logging.info(f"Processing web search follow-up text (lang={language_code}): {current_user_text}")
         else: # Initial web search query
-            current_user_text = query 
-            logging.info(f"Processing initial web search query: {current_user_text}")
+            current_user_text = f"{system_instruction}{query}"
+            logging.info(f"Processing initial web search query (lang={language_code}): {current_user_text}")
             history = [] # Start fresh history for a new initial web search
 
         current_turn = Content(role="user", parts=[Part(text=current_user_text)])
@@ -474,7 +500,7 @@ if __name__ == "__main__":
     import hypercorn.config
 
     config = hypercorn.config.Config()
-    config.bind = [f"0.0.0.0:{settings.port}"]
+    config.bind = [f"127.0.0.1:{settings.port}"] # Changed bind address
     # config.loglevel = "DEBUG" # Uncomment for more detailed server logs
     
     print(f"Starting Hypercorn server on http://{config.bind[0]}...")

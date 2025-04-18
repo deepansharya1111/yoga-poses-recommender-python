@@ -1,9 +1,11 @@
 project_id: your-project-id
 location: us-central1
-gemini_model_name: gemini-1.5-flash-002
+gemini_model_name: gemini-2.0-flash-001
 embedding_model_name: text-embedding-004
 image_generation_model_name: imagen-3.0-fast-generate-002
+gemini_live_model: gemini-2.0-flash-live-preview-04-09 # Model for Live API, Or your specific live model https://cloud.google.com/vertex-ai/generative-ai/docs/models
 database: (default)
 collection: poses
 test_collection: test-poses
-top_k: "3"
+top_k: 3
+port: 8080
