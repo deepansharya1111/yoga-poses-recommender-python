@@ -8,5 +8,5 @@ google-genai # Newer, unified SDK for Gemini
 numpy==2.2.2 # For audio data handling (as per notebook)
 hypercorn # ASGI server to run async Flask
 Pillow # For image processing
-tenacity==9.0.0 \  # Needed for generate-descriptions.py script
-datasets==3.2.0 \  # Needed for import-data.py script (Hugging Face datasets)
+tenacity==9.0.0  # Needed for generate-descriptions.py script
+datasets==3.2.0  # Needed for import-data.py script (Hugging Face datasets)
